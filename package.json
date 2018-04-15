@@ -1,0 +1,25 @@
+{
+  "name": "nodelife-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p \"./src\"",
+    "watch": "concurrently \"tsc -w src/server.ts\"",
+    "tslint": "tslint -c tslint.json -p src/tsconfig.json"
+  },
+  "dependencies": {
+    "@types/socket.io-client": "^1.4.32",
+    "async": "^2.1.2",
+    "concurrently": "^3.4.0",
+    "request": "^2.78.0",
+    "rxjs": "^5.5.10",
+    "socket.io-client": "^2.1.0",
+    "tslint": "^5.9.1",
+    "typescript": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/request": "0.0.45",
+    "@types/async": "^2.0.40"
+  }
+}
