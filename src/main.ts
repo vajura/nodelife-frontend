@@ -15,7 +15,6 @@ function start() {
     console.log('Disconnected');
   });
   socket.on('message', (data: any[])  => {
-    console.log(data);
     fieldUpdate(data);
   });
 }
