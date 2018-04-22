@@ -8,10 +8,10 @@ export interface PlayerInterface {
 
 export function createPlayer() {
   return {
-    viewPortX: 100,
-    viewPortY: 100,
-    viewPortH: 128,
-    viewPortW: 128,
-    zoom: 1
+    viewPortX: 50,
+    viewPortY: 50,
+    viewPortH: 200,
+    viewPortW: 200,
+    zoom: 4
   };
 }

@@ -1,0 +1,10 @@
+.canvas-wrapper {
+  width: 100%;
+  height: auto;
+  position: relative;
+}
+.overlaping-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
