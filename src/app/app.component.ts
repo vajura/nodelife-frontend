@@ -4,7 +4,7 @@ import { SocketEventEnum } from '../commons/enums/socket-event-enum';
 import * as io from 'socket.io-client';
 import * as $ from 'jquery';
 import { createPlayer, PlayerInterface } from '../commons/interfaces/player-interface';
-import { environment } from '../../environments/environment';
+import { environment } from '../environments/environment';
 declare var kd;
 
 @Component({
@@ -64,10 +64,6 @@ export class AppComponent  implements OnInit {
   }
 
   createPlayerControls() {
-    let previousX = 0;
-    let previousY = 0;
-    let mouseX = 0;
-    let mouseY = 0;
     const moveSpeed = 1;
     kd.W.down(() => {this.updateMapPosition(0, -moveSpeed); });
     kd.A.down(() => {this.updateMapPosition(-moveSpeed, 0); });
