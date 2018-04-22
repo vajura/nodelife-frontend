@@ -4,6 +4,7 @@ import { SocketEventEnum } from '../commons/enums/socket-event-enum';
 import * as io from 'socket.io-client';
 import * as $ from 'jquery';
 import { createPlayer, PlayerInterface } from '../commons/interfaces/player-interface';
+import { environment } from '../../environments/environment';
 declare var kd;
 
 @Component({
@@ -16,7 +17,7 @@ export class AppComponent  implements OnInit {
 
   width = 800;
   height = 800;
-  htmlContainer: any
+  htmlContainer: any;
   mainContainer: any;
   mainCanvas: any;
   mainCtx: any;
@@ -46,7 +47,7 @@ export class AppComponent  implements OnInit {
     this.createPlayerControls();
     this.updateUICanvas();
 
-    this.socket = io('http://localhost:3001', {transports: ['websocket', 'polling', 'flashsocket']});
+    this.socket = io(environment.API_URL, {transports: ['websocket', 'polling', 'flashsocket']});
     this.socket.on('connect', () => {
       console.log('Connected');
     });
@@ -75,7 +76,7 @@ export class AppComponent  implements OnInit {
     this.mainContainer.on('mousewheel', (e) => {
       if (e.originalEvent.wheelDelta / 120 > 0) {
         this.player.zoom *= 2;
-      }// fewfew
+      }
       else {
         this.player.zoom /= 2;
       }
@@ -100,7 +101,7 @@ export class AppComponent  implements OnInit {
       cells.push({x: xPos, y: yPos + 2});
       cells.push({x: xPos - 1, y: yPos + 2});
       cells.push({x: xPos - 2, y: yPos + 1});
-      this.socket.emit(SocketEventEnum.addCells, cells); // dwad
+      this.socket.emit(SocketEventEnum.addCells, cells);
     });
   }
 
@@ -142,9 +143,9 @@ export class AppComponent  implements OnInit {
     this.uiCtx.stroke();
 
     const startingX = (8 - this.player.viewPortX % 8) * this.player.zoom;
-    const startingY = (8 - this.player.viewPortY % 8) * this.player.zoom; // fawefawe
+    const startingY = (8 - this.player.viewPortY % 8) * this.player.zoom;
     const pz8 = this.player.zoom * 8;
-    for (let a = 0; a < 100 / this.player.zoom; a++) {// fewafawe
+    for (let a = 0; a < 100 / this.player.zoom; a++) {
       this.uiCtx.beginPath();
       this.uiCtx.moveTo(pz8 * a + startingX, 0);
       this.uiCtx.lineTo(pz8 * a + startingX, 800);
