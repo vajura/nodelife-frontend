@@ -65,10 +65,17 @@ export class AppComponent  implements OnInit {
 
   createPlayerControls() {
     const moveSpeed = 1;
+    let mouseX = 0;
+    let mouseY = 0;
     kd.W.down(() => {this.updateMapPosition(0, -moveSpeed); });
     kd.A.down(() => {this.updateMapPosition(-moveSpeed, 0); });
     kd.S.down(() => {this.updateMapPosition(0, moveSpeed); });
     kd.D.down(() => {this.updateMapPosition(moveSpeed, 0); });
+    this.mainContainer.on('mousemove', (e) => {
+      const offSet = this.mainContainer.offset();
+      mouseX = Math.floor((e.pageX - offSet.left));
+      mouseY = Math.floor((e.pageY - offSet.top));
+    });
     this.mainContainer.on('mousewheel', (e) => {
       if (e.originalEvent.wheelDelta / 120 > 0) {
         this.player.zoom *= 2;
