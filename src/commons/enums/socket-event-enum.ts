@@ -1,4 +1,5 @@
 export enum SocketEventEnum {
   updateField = 'updateField',
-  updatePlayerData = 'updatePlayerData'
+  updatePlayerData = 'updatePlayerData',
+  addCells = 'addCells'
 }

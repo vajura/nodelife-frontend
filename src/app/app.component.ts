@@ -4,6 +4,7 @@ import { SocketEventEnum } from '../commons/enums/socket-event-enum';
 import * as io from 'socket.io-client';
 import * as $ from 'jquery';
 import { createPlayer, PlayerInterface } from '../commons/interfaces/player-interface';
+declare var kd;
 
 @Component({
   selector: 'app-root',
@@ -15,6 +16,7 @@ export class AppComponent  implements OnInit {
 
   width = 800;
   height = 800;
+  htmlContainer: any
   mainContainer: any;
   mainCanvas: any;
   mainCtx: any;
@@ -29,6 +31,11 @@ export class AppComponent  implements OnInit {
   }
 
   ngOnInit() {
+    setInterval(() => {
+      kd.tick();
+    }, 25)
+
+    this.htmlContainer = $('html');
     this.mainContainer = $('#main-container');
     this.mainCanvas = <HTMLCanvasElement>document.getElementById('main-container');
     this.mainCtx = this.mainCanvas.getContext('2d');
@@ -56,42 +63,23 @@ export class AppComponent  implements OnInit {
   }
 
   createPlayerControls() {
-    let dragging = false;
     let previousX = 0;
     let previousY = 0;
     let mouseX = 0;
     let mouseY = 0;
-    this.mainContainer.on('mousedown', () => {
-      dragging = true;
-    });
-    this.mainContainer.on('mouseup', () => {
-      dragging = false;
-    });
-    this.mainContainer.on('mouseleave', () => {
-      dragging = false;
-    });
-    this.mainContainer.on('mousemove', (event: any) => {
-      mouseX = event.pageX;
-      mouseY = event.pageY;
-      if (dragging) {
-        this.player.viewPortX += Math.floor((mouseX - previousX) / 2);
-        this.player.viewPortY += Math.floor((mouseY - previousY) / 2);
-        this.player.viewPortX = this.clamp(this.player.viewPortX, 0, 5000 - this.player.viewPortW);
-        this.player.viewPortY = this.clamp(this.player.viewPortY, 0, 5000 - this.player.viewPortH);
-        this.socket.emit(SocketEventEnum.updatePlayerData, this.player);
-        console.log(this.player);
-      }
-      previousX = mouseX;
-      previousY = mouseY;
-    });
+    const moveSpeed = 1;
+    kd.W.down(() => {this.updateMapPosition(0, -moveSpeed); });
+    kd.A.down(() => {this.updateMapPosition(-moveSpeed, 0); });
+    kd.S.down(() => {this.updateMapPosition(0, moveSpeed); });
+    kd.D.down(() => {this.updateMapPosition(moveSpeed, 0); });
     this.mainContainer.on('mousewheel', (e) => {
       if (e.originalEvent.wheelDelta / 120 > 0) {
         this.player.zoom *= 2;
-      }
+      }// fewfew
       else {
         this.player.zoom /= 2;
       }
-      this.player.zoom = this.clamp(this.player.zoom, 1, 16);
+      this.player.zoom = this.clamp(this.player.zoom, 2, 32);
       this.player.viewPortW = Math.floor(this.width / this.player.zoom);
       this.player.viewPortH = Math.floor(this.height / this.player.zoom);
       this.player.viewPortX = Math.floor(this.clamp(mouseX / this.player.zoom + this.player.viewPortX - this.player.viewPortW / 2,
@@ -100,9 +88,29 @@ export class AppComponent  implements OnInit {
         0, 5000 - this.player.viewPortH));
       this.socket.emit(SocketEventEnum.updatePlayerData, this.player);
       console.log(this.player);
+      this.updateUICanvas();
     });
-    this.mainContainer.on('click touch', () => {
+    this.mainContainer.on('click touch', (event) => {
+      const cells: any = [];
+      const offSet = this.mainContainer.offset();
+      const xPos = Math.floor((event.pageX - offSet.left) / this.player.zoom + this.player.viewPortX);
+      const yPos = Math.floor((event.pageY - offSet.top) / this.player.zoom + this.player.viewPortY);
+      cells.push({x: xPos, y: yPos});
+      cells.push({x: xPos, y: yPos + 1});
+      cells.push({x: xPos, y: yPos + 2});
+      cells.push({x: xPos - 1, y: yPos + 2});
+      cells.push({x: xPos - 2, y: yPos + 1});
+      this.socket.emit(SocketEventEnum.addCells, cells); // dwad
     });
+  }
+
+  updateMapPosition(addX: number, addY: number) {
+    this.player.viewPortX += addX;
+    this.player.viewPortY += addY;
+    this.player.viewPortX = this.clamp(this.player.viewPortX, 0, 5000 - this.player.viewPortW);
+    this.player.viewPortY = this.clamp(this.player.viewPortY, 0, 5000 - this.player.viewPortH);
+    this.socket.emit(SocketEventEnum.updatePlayerData, this.player);
+    this.updateUICanvas();
   }
 
   updateMainCanvas(data: CellInterface[]) {
@@ -123,6 +131,8 @@ export class AppComponent  implements OnInit {
   }
 
   updateUICanvas() {
+    this.uiCtx.clearRect(0, 0, this.width, this.height);
+    this.uiCtx.strokeStyle = '#111111';
     this.uiCtx.beginPath();
     this.uiCtx.moveTo(0, 0);
     this.uiCtx.lineTo(800, 0);
@@ -130,6 +140,24 @@ export class AppComponent  implements OnInit {
     this.uiCtx.lineTo(0, 800);
     this.uiCtx.lineTo(0, 0);
     this.uiCtx.stroke();
+
+    const startingX = (8 - this.player.viewPortX % 8) * this.player.zoom;
+    const startingY = (8 - this.player.viewPortY % 8) * this.player.zoom; // fawefawe
+    const pz8 = this.player.zoom * 8;
+    for (let a = 0; a < 100 / this.player.zoom; a++) {// fewafawe
+      this.uiCtx.beginPath();
+      this.uiCtx.moveTo(pz8 * a + startingX, 0);
+      this.uiCtx.lineTo(pz8 * a + startingX, 800);
+      this.uiCtx.strokeStyle = '#CCCCCC';
+      this.uiCtx.stroke();
+    }
+    for (let a = 0; a < 100 / this.player.zoom; a++) {
+      this.uiCtx.beginPath();
+      this.uiCtx.moveTo(0, pz8 * a + startingY);
+      this.uiCtx.lineTo(800, pz8 * a + startingY);
+      this.uiCtx.strokeStyle = '#CCCCCC';
+      this.uiCtx.stroke();
+    }
   }
 
   clamp(num: number, min: number, max: number) {
