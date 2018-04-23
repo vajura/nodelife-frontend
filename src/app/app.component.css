@@ -1,10 +1,13 @@
 .canvas-wrapper {
   width: 100%;
-  height: auto;
+  height: 800px;
   position: relative;
 }
 .overlaping-canvas {
   position: absolute;
   left: 0;
   top: 0;
+}
+.instructions-wrapper {
+  margin-top: 10px;
 }

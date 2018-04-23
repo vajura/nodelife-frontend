@@ -26,6 +26,8 @@ export class AppComponent  implements OnInit {
   uiCtx: any;
   player: PlayerInterface = createPlayer();
   socket: SocketIOClient.Socket;
+  shape: CellInterface[] = [];
+  updateUI = false;
 
   constructor() {
 
@@ -54,7 +56,7 @@ export class AppComponent  implements OnInit {
     this.socket.on('disconnect', () => {
       console.log('Disconnected');
     });
-    this.socket.on(SocketEventEnum.updateField, (data: Int32Array)  => {
+    this.socket.on(SocketEventEnum.updateField, (data: Int16Array)  => {
       this.updateMainCanvas(data);
     });
     this.socket.emit('settings', {});
@@ -71,6 +73,7 @@ export class AppComponent  implements OnInit {
     kd.A.down(() => {this.updateMapPosition(-moveSpeed, 0); });
     kd.S.down(() => {this.updateMapPosition(0, moveSpeed); });
     kd.D.down(() => {this.updateMapPosition(moveSpeed, 0); });
+    kd.R.up(() => {this.rotateShape(); });
     this.mainContainer.on('mousemove', (e) => {
       const offSet = this.mainContainer.offset();
       mouseX = Math.floor((e.pageX - offSet.left));
@@ -99,13 +102,33 @@ export class AppComponent  implements OnInit {
       const offSet = this.mainContainer.offset();
       const xPos = Math.floor((event.pageX - offSet.left) / this.player.zoom + this.player.viewPortX);
       const yPos = Math.floor((event.pageY - offSet.top) / this.player.zoom + this.player.viewPortY);
-      cells.push({x: xPos, y: yPos});
-      cells.push({x: xPos, y: yPos + 1});
-      cells.push({x: xPos, y: yPos + 2});
-      cells.push({x: xPos - 1, y: yPos + 2});
-      cells.push({x: xPos - 2, y: yPos + 1});
+      for (let a = 0; a < this.shape.length; a++) {
+        cells.push({x: this.shape[a].x + xPos, y: this.shape[a].y + yPos});
+      }
       this.socket.emit(SocketEventEnum.addCells, cells);
     });
+
+    this.shape.push({x: 0, y: 0});
+    this.shape.push({x: 0, y: 1});
+    this.shape.push({x: 0, y: 2});
+    this.shape.push({x: -1, y: 2});
+    this.shape.push({x: -2, y: 1});
+  }
+
+  rotateShape() {
+    for (let a = 0; a < this.shape.length; a++) {
+      if (this.shape[a].x > 0 && this.shape[a].y > 0 ||
+        this.shape[a].x < 0 && this.shape[a].y < 0) {
+        this.shape[a] = {x: this.shape[a].x, y: -this.shape[a].y};
+      } else if (this.shape[a].x > 0 && this.shape[a].y < 0 ||
+        this.shape[a].x < 0 && this.shape[a].y > 0) {
+        this.shape[a] = {x: -this.shape[a].x, y: this.shape[a].y};
+      } else if (this.shape[a].y === 0) {
+        this.shape[a] = {x: 0, y: -this.shape[a].x};
+      } else if (this.shape[a].x === 0) {
+        this.shape[a] = {x: this.shape[a].y, y: 0};
+      }
+    }
   }
 
   updateMapPosition(addX: number, addY: number) {
@@ -114,32 +137,37 @@ export class AppComponent  implements OnInit {
     this.player.viewPortX = this.clamp(this.player.viewPortX, 0, 5000 - this.player.viewPortW);
     this.player.viewPortY = this.clamp(this.player.viewPortY, 0, 5000 - this.player.viewPortH);
     this.socket.emit(SocketEventEnum.updatePlayerData, this.player);
-    this.updateUICanvas();
+    this.updateUI = true;
   }
 
-  updateMainCanvas(data: Int32Array) {
+  updateMainCanvas(data: Int16Array) {
     const cells: CellInterface[] = this.parseData(data);
     const imageData = this.mainCtx.createImageData(this.width, this.height);
     const data32 = new Uint32Array(imageData.data.buffer);
     const heightRatio = this.height / this.player.viewPortH;
     const widthRatio = this.width / this.player.viewPortW;
-    for (let a = 0; a < data.length; a++) {
+    for (let a = 0; a < cells.length; a++) {
       for (let b = 0; b < heightRatio; b++) {
         for (let c = 0; c < widthRatio; c++) {
           const xPos = (cells[a].x - this.player.viewPortX) * widthRatio + b;
           const YPos = ((cells[a].y - this.player.viewPortY) * heightRatio + c) * this.width;
-          data32[xPos + YPos] = 0XFF000000;
+          data32[xPos + YPos] = 0XFF000000 + cells[a].color;
         }
       }
     }
     this.mainCtx.putImageData(imageData, 0, 0);
+    if (this.updateUI) {
+      this.updateUICanvas();
+      this.updateUI = false;
+    }
   }
 
-  parseData(data: Int32Array): CellInterface[] {
+  parseData(data: Int16Array): CellInterface[] {
     const cells: CellInterface[] = [];
     const arrayLength: number = data[0];
     for (let a = 1; a < arrayLength; a += 3) {
-      cells.push({x: data[a], y: data[a + 1], color: data[a + 2]});
+      const color = data[a + 2] * 1024;
+      cells.push({x: data[a], y: data[a + 1], color: color});
     }
     return cells;
   }
