@@ -54,7 +54,7 @@ export class AppComponent  implements OnInit {
     this.socket.on('disconnect', () => {
       console.log('Disconnected');
     });
-    this.socket.on(SocketEventEnum.updateField, (data: CellInterface[])  => {
+    this.socket.on(SocketEventEnum.updateField, (data: Int32Array)  => {
       this.updateMainCanvas(data);
     });
     this.socket.emit('settings', {});
@@ -117,7 +117,8 @@ export class AppComponent  implements OnInit {
     this.updateUICanvas();
   }
 
-  updateMainCanvas(data: CellInterface[]) {
+  updateMainCanvas(data: Int32Array) {
+    const cells: CellInterface[] = this.parseData(data);
     const imageData = this.mainCtx.createImageData(this.width, this.height);
     const data32 = new Uint32Array(imageData.data.buffer);
     const heightRatio = this.height / this.player.viewPortH;
@@ -125,13 +126,22 @@ export class AppComponent  implements OnInit {
     for (let a = 0; a < data.length; a++) {
       for (let b = 0; b < heightRatio; b++) {
         for (let c = 0; c < widthRatio; c++) {
-          const xPos = (data[a].x - this.player.viewPortX) * widthRatio + b;
-          const YPos = ((data[a].y - this.player.viewPortY) * heightRatio + c) * this.width;
-          data32[xPos + YPos] = data[a].color;
+          const xPos = (cells[a].x - this.player.viewPortX) * widthRatio + b;
+          const YPos = ((cells[a].y - this.player.viewPortY) * heightRatio + c) * this.width;
+          data32[xPos + YPos] = 0XFF000000;
         }
       }
     }
     this.mainCtx.putImageData(imageData, 0, 0);
+  }
+
+  parseData(data: Int32Array): CellInterface[] {
+    const cells: CellInterface[] = [];
+    const arrayLength: number = data[0];
+    for (let a = 1; a < arrayLength; a += 3) {
+      cells.push({x: data[a], y: data[a + 1], color: data[a + 2]});
+    }
+    return cells;
   }
 
   updateUICanvas() {
